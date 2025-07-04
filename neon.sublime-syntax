@@ -1,0 +1,112 @@
+%YAML 1.2
+---
+name: Neon
+file_extensions:
+  - neon
+scope: source.neon
+
+contexts:
+  main:
+    - include: comments
+    - include: strings
+    - include: numbers
+    - include: function_definitions
+    - include: keywords
+    - include: builtins
+    - include: function_calls
+    - include: operators
+    - include: types
+    - match: \b[a-zA-Z_]\w*\b
+      scope: variable.other.neon
+
+  comments:
+    - match: '//.*$'
+      scope: comment.line.double-slash.neon
+    - match: '/\*'
+      scope: comment.block.neon
+      push:
+        - meta_scope: comment.block.neon
+        - match: '.*\*/'
+          pop: true
+        - match: '.+'
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.neon
+      push: double_quoted_string
+    - match: "'"
+      scope: punctuation.definition.string.begin.neon
+      push: single_quoted_string
+
+  double_quoted_string:
+    - meta_scope: string.quoted.double.neon
+    - match: '\\n'
+      scope: constant.character.escape.neon
+    - match: '"'
+      scope: punctuation.definition.string.end.neon
+      pop: true
+    - match: '\\.'
+      scope: constant.character.escape.neon
+
+  single_quoted_string:
+    - meta_scope: string.quoted.single.neon
+    - match: '\\n'
+      scope: constant.character.escape.neon
+    - match: "'"
+      scope: punctuation.definition.string.end.neon
+      pop: true
+    - match: '\\.'
+      scope: constant.character.escape.neon
+
+  numbers:
+    - match: \b-?\d+(\.\d+)?\b
+      scope: constant.numeric.neon
+
+  keywords:
+    # Declarations & definitions
+    - match: \b(function|prototype|import|var|const|define|enum|abstract)\b
+      scope: storage.modifier.neon
+
+    # Control flow
+    - match: \b(from|to|step|do|in|as|while|break|continue)\b
+      scope: keyword.control.flow.neon
+
+    - match: \b(int|string|uint|char|boolean|void|float|ulong|uchar)\b
+      scope: storage.type.neon
+
+    - match: \b(Cast|ptr|Array|Raw)\b
+      scope: support.function.builtin.neon
+
+    # Conditional logic
+    - match: \b(if|elseif|else|then|is)\b
+      scope: keyword.control.conditional.neon
+
+    # Block delimiters & return
+    - match: \b(end|return)\b
+      scope: keyword.control.block.neon
+
+    # Case selector
+    - match: \b(case)\b
+      scope: keyword.control.case.neon
+
+    - match: \btype\b\s+(\w+)
+      captures:
+        1: entity.name.type.neon
+      scope: storage.type.neon
+
+  function_calls:
+    - match: \b[a-zA-Z_]\w*(?=\()
+      scope: entity.name.function.neon
+  function_definitions:
+    - match: \bfunction\b\s+(\w+)
+      captures:
+        1: entity.name.function.definition.neon
+      scope: storage.modifier.neon
+
+  operators:
+    - match: \.\.\.
+      scope: keyword.operator.variadic.neon
+    - match: ==|!=|<=|>=|\+=|-=|\*=|/=|&&|\|\||[=+\-*/<>%]
+      scope: keyword.operator.neon
+    - match: '[\(\)\[\]\{\}\.,:;]'
+      scope: punctuation.separator.neon
