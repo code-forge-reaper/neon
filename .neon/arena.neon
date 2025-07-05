@@ -1,0 +1,171 @@
+// heap implementation in neon
+// i'd not use this if i where you, since it isn't complete
+// (somewhat) ported from:
+// [Writing My Own Malloc in C](https://www.youtube.com/watch?v=sZ8GJ1TiMdk), by Tsoding
+import "stdlib"
+#if !defined(HEAP_USE_LESS_RAM) && !defined(HEAP_USE_CUSTOM_RAM)
+//const CHUNK_LIST_CAP int = 1024
+#define CHUNK_LIST_CAP 1024
+// 64 mb by default
+#define HEAP_CAP 64 * 1024 * 1024
+#elif defined(HEAP_USE_CUSTOM_RAM)
+#define HEAP_CAP HEAP_USE_CUSTOM_RAM_MB * 1024 * 1024
+#define CHUNK_LIST_CAP HEAP_USE_CUSTOM_CAP
+#else
+// ~3MB of ram for heap
+//const CHUNK_LIST_CAP int = 64
+#define CHUNK_LIST_CAP 64
+// 16 mb if you want less memory used by the arena
+#define HEAP_CAP 16 * 1024 * 1024
+#endif
+
+type Chunk = {
+	start ptr<char>
+	size uint
+}
+
+type Chunk_list = {
+	count uint
+	chunks Array<Chunk, CHUNK_LIST_CAP>
+}
+
+
+var heap @static Array<ptr<void>, HEAP_CAP> = {0}
+var heapSize uint = 0
+var alloced_chunks @static Chunk_list = {0}
+var freed_chunks @static Chunk_list = {0}
+
+//extern bsearch(...) ptr<void>
+extern bsearch(key ptr<void>, base ptr<void>, count uint, size uint, cmpFn ptr<void>) ptr<void>
+
+function chunk_start_cmp(a ptr<Chunk>, b ptr<Chunk>) int
+
+	// since they are a pointer, use ":", since it gets translated to "->" when generating C
+	return (a:start - b:start)
+end
+
+function chunk_list_find(list ptr<Chunk_list>, p ptr<void>) int
+
+	var key Chunk = Cast<Chunk>({p})
+	var thing ptr<Chunk> = bsearch(&key, list:chunks, list:count, sizeof(list:chunks[0]), &chunk_start_cmp)
+	//assert(false, "TODO: chunk_list_search")
+	if thing != nil then
+		assert(list:chunks <= ptr<Chunk>(thing), "TODO: error message")
+		return (ptr<Chunk>(thing) - list:chunks) / sizeof(list:chunks[0])
+	else
+		return -1
+	end
+end
+
+function chunk_list_dump(list ptr<Chunk_list>) void
+	var size int = Cast<int>(list:count)
+	printf("chunks (%i)\n", size)
+	from 0 to size as i do
+		printf("start : %p, size: %i\n",
+			list:chunks[Cast<int>(i)].start,
+			list:chunks[i].size)
+	end
+end
+
+function chunk_list_insert(list ptr<Chunk_list>, start ptr<void>, size uint) void
+	assert(list:count < CHUNK_LIST_CAP, "cannot insert any more items into heap")
+	list:chunks[list:count].start = start
+	list:chunks[list:count].size = size
+	var __start int = Cast<int>(list:count) - 1
+
+	from __start to 1 step -1 as i do
+		if list:chunks[i].start < list:chunks[i - 1].start then
+			break
+		end
+		const _i Chunk = list:chunks[i]
+		list:chunks[i] = list:chunks[i - 1]
+		list:chunks[i - 1] = _i
+	end
+	list:count += 1
+end
+
+
+function chunk_list_remove(list ptr<Chunk_list>, index int) void
+	assert(index < list:count, "invalid index")
+	var s int = Cast<int>(list:count - 1)
+	from index to s as i do
+		list:chunks[i] = list:chunks[i+1]
+	end
+	list:count-=1
+end
+
+function heap_alloc(size uint) ptr<void>
+
+	size = (size + 7) - ((size + 7) % 8)
+
+	// First, look for a free chunk that fits
+	var fr uint = freed_chunks.count
+	from 0 to fr as i do
+	    var chunk Chunk = freed_chunks.chunks[i]
+		if chunk.size >= size then
+		    chunk_list_insert(&alloced_chunks, chunk.start, size)
+
+		    // Split the chunk if there's space left
+		    if chunk.size > size then
+		        var leftover_start ptr<void> = chunk.start + size
+		        const leftover_size uint = chunk.size - size
+		        chunk_list_insert(&freed_chunks, leftover_start, leftover_size)
+		    end
+
+		    chunk_list_remove(&freed_chunks, i)
+		    return chunk.start
+		end
+
+	end
+
+	// No chunk was big enough, fallback to bump alloc
+	assert(heapSize + size <= HEAP_CAP, "failed to allocate in the heap")
+	var res ptr<void> = heap + heapSize
+	heapSize += size
+	chunk_list_insert(&alloced_chunks, res, size)
+	return res
+
+end
+
+
+function heap_free(area ptr<void>) void
+	if area == nil then
+		printf("cannot free a random pointer from the heap\n")
+		exit(1)
+	end
+
+	const index int = chunk_list_find(&alloced_chunks, area)
+	assert(index>=0, "does this block of memory even exist in the heap?")
+	chunk_list_insert(&freed_chunks,
+		alloced_chunks.chunks[index].start,
+		alloced_chunks.chunks[index].size)
+	chunk_list_remove(&alloced_chunks, index)
+end
+
+function heap_collect() void
+    var i uint = 0
+    var chunks uint = freed_chunks.count
+    while i + 1 < chunks do
+        const current Chunk = freed_chunks.chunks[i]
+        const next Chunk = freed_chunks.chunks[i + 1]
+        
+        const current_end ptr<char> = current.start + current.size
+        
+        if current_end == next.start then
+            // merge them
+            freed_chunks.chunks[i].size += next.size
+            chunk_list_remove(&freed_chunks, i + 1)
+            // don't increment i, re-check new next
+        else
+            i += 1
+        end
+    end
+	if freed_chunks.count == 1 then
+	    const only Chunk = freed_chunks.chunks[0]
+	    if ptr<void>(only.start) == heap && only.size == heapSize then
+	        heapSize = 0
+	        freed_chunks.count = 0
+	    end
+	end
+
+end

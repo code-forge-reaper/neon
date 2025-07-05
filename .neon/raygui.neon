@@ -1,0 +1,302 @@
+/************************************************************************************\
+*   this defines UI stuff, it might be simple raygui clone, but it gets shit done :) *
+*                   this was made for the neon programming language                  *
+*                     @raylib: https://github.com/raysan5/raylib                     *
+*                     @raygui: https://github.com/raysan5/raygui                     *
+*              some things might not align with how raygui.h does things             *
+*                      since we want to make it easier to use                        *
+\************************************************************************************/
+// be warned: raygui handles everything differently,
+// e.g: GuiLabel:
+/*
+in raygui.h:
+RAYGUIAPI int GuiLabel(Rectangle bounds, const char *text);                                            // Label control
+
+in raygui.neon(this file):
+function GuiLabel(text string pos Vector2) void
+*/
+import "raylib"
+type GuiBorder = {
+	color Color
+	width int // like css border "1px" for example
+}
+
+type GuiButtonTheme = {
+	hoverColor Color
+	activeBackground Color
+	textColor Color
+	background Color
+	border GuiBorder
+	uiTextPadding int
+	fontSize int
+}
+
+type GuiCheckBoxTheme = {
+	hoverColor Color
+	activeBackground Color
+	checkColor Color
+	border GuiBorder
+	checkSize int
+	size int
+	fontSize int
+}
+
+type GuiLabelTheme = {
+	textColor Color
+	background Color
+	border GuiBorder
+	uiTextPadding int
+	fontSize int
+}
+
+type GuiTextInputTheme = {
+	textColor Color
+	background Color
+	border GuiBorder
+	cursorColor Color
+	uiTextPadding int
+	fontSize int
+}
+
+type Theme = {
+	button GuiButtonTheme
+	label GuiLabelTheme
+	checkbox GuiCheckBoxTheme
+	textInput GuiTextInputTheme
+}
+//const UI_TEXT_PADDING int = 5
+//const UI_ELEMENT_PADDING int = 10
+
+var theme Theme = {
+	{
+		WHITE,
+		DARKGRAY,
+		BLACK,
+		LIGHTGRAY,
+		{
+			DARKGRAY,
+			2
+		},
+		3,
+		18
+	},
+	{
+		WHITE,
+		DARKGRAY,
+		{
+			WHITE,
+			2
+		},
+		5,
+		18
+	},
+	{ // GuiCheckBoxTheme
+		{120,120,120,255},
+		DARKGRAY,
+		BLACK,
+		{ WHITE, 2 },
+		10,
+		20,
+		18
+	},
+	{
+		WHITE,      // textColor Color
+		DARKGRAY,   // background Color
+		{WHITE, 2}, // border GuiBorder
+		GRAY,       // cursorColor Color
+		2,          // uiTextPadding int
+		18          // fontSize int
+	}
+}
+
+// SetGuiTheme(&theme)
+function SetGuiTheme(newTheme ptr<Theme>) void
+	theme = Raw<newTheme>
+end
+
+function DrawBorder(x int, y int, w int, h int, color Color, thickness int) void
+	if thickness <= 0 then
+		return
+	end
+	DrawRectangle(x, y, w, thickness, color) // top
+	DrawRectangle(x, y + h - thickness, w, thickness, color) // bottom
+	DrawRectangle(x, y, thickness, h, color) // left
+	DrawRectangle(x + w - thickness, y, thickness, h, color) // right
+end
+
+function GuiButton(text string, pos Vector2) boolean
+    var bg Color = theme.button.background
+    var hoverColor Color = theme.button.hoverColor
+    var activeBackground Color = theme.button.activeBackground
+    var border GuiBorder = theme.button.border
+    var textColor Color = theme.button.textColor
+    var uiButtonTextPadding int = theme.button.uiTextPadding
+    var uiTextSize int = theme.button.uiTextPadding
+    var fontSize int  = theme.button.fontSize
+
+
+
+	const size Vector2 = Cast<Vector2>({
+		MeasureText(text, fontSize) + uiButtonTextPadding,
+		fontSize + uiButtonTextPadding
+	})
+
+	var color Color = bg
+	if (GetMouseX() >= pos.x) && (GetMouseX() <= pos.x + size.x) &&
+	   (GetMouseY() >= pos.y) && (GetMouseY() <= pos.y + size.y)
+	then
+		color = hoverColor
+		if IsMouseButtonDown(MOUSE_BUTTON_LEFT) then
+			color = activeBackground
+		end
+		if IsMouseButtonReleased(MOUSE_BUTTON_LEFT) then return true end
+	end
+
+	DrawRectangle(pos.x, pos.y, size.x, size.y, color)
+	DrawText(text, pos.x + uiTextSize, pos.y + uiTextSize, fontSize, textColor)
+
+
+	// draw border
+	DrawBorder(pos.x, pos.y, size.x, size.y, border.color, border.width)
+
+	return false
+end
+
+
+function GuiLabel(text string pos Vector2) void
+	var bg Color = theme.label.background
+	var textColor Color = theme.label.textColor
+	var border GuiBorder = theme.label.border
+	var uiButtonTextPadding int = theme.button.uiTextPadding
+	var uiTextSize int = theme.label.uiTextPadding
+	var fontSize int  = theme.label.fontSize
+
+	const width int = MeasureText(text, fontSize) + uiButtonTextPadding
+	const height int = fontSize + uiButtonTextPadding
+
+	DrawRectangle(pos.x, pos.y, width, height, bg)
+	DrawText(text, pos.x + uiTextSize, pos.y + uiTextSize, fontSize, textColor)
+
+	// draw border
+	DrawBorder(pos.x, pos.y, width, height, border.color, border.width)
+end
+
+function GuiImageButton(texture Texture2D, source Rectangle, pos Vector2) boolean
+    var bg Color = theme.button.background
+    var hoverColor Color = theme.button.hoverColor
+    var activeBackground Color = theme.button.activeBackground
+    var border GuiBorder = theme.button.border
+
+    var color Color = bg
+	if (GetMouseX() >= pos.x) && (GetMouseX() <= pos.x + source.width) &&
+	(GetMouseY() >= pos.y) && (GetMouseY() <= pos.y + source.height)
+	then
+		color = hoverColor
+		if IsMouseButtonDown(MOUSE_BUTTON_LEFT) then
+			color = activeBackground
+		end
+		if IsMouseButtonReleased(MOUSE_BUTTON_LEFT) then return true end
+	end
+
+	DrawTextureRec(texture, source, pos, color)
+	DrawBorder(pos.x, pos.y, source.width, source.height, border.color, border.width)
+	return false
+end
+
+function GuiCheckbox(text string, checked ptr<boolean>, position Vector2, fontSize int) boolean
+	var bg Color = theme.button.background
+	var hoverColor Color = theme.checkbox.hoverColor
+	var activeBackground Color = theme.checkbox.activeBackground
+	var border GuiBorder = theme.checkbox.border
+	var markColor Color = theme.checkbox.checkColor
+	var checkSize int = theme.checkbox.checkSize
+	var spacing int = 5 // space between checkbox and text
+
+	var labelTextColor Color = theme.label.textColor
+	var labelPadding int = theme.label.uiTextPadding
+	var labelBg Color = theme.label.background
+	var labelBorder GuiBorder = theme.label.border
+
+	var size int = theme.checkbox.size
+	var original boolean = Raw<checked>
+
+	var textWidth int = MeasureText(text, fontSize)
+	var textHeight int = fontSize
+	var checkboxX int = position.x
+	var checkboxY int = position.y
+	var labelX int = checkboxX + size + spacing
+	var labelY int = checkboxY + (size - fontSize) / 2 - 1
+
+	var color Color = bg
+	if (GetMouseX() >= checkboxX) && (GetMouseX() <= labelX + textWidth) &&
+	   (GetMouseY() >= checkboxY) && (GetMouseY() <= checkboxY + size)
+	then
+		color = hoverColor
+		if IsMouseButtonDown(MOUSE_BUTTON_LEFT) then
+			color = activeBackground
+		end
+		if IsMouseButtonReleased(MOUSE_BUTTON_LEFT) then
+			Raw<checked> = !Raw<checked>
+		end
+	end
+
+	// Draw checkbox
+	DrawRectangle(checkboxX, checkboxY, size, size, color)
+	DrawBorder(checkboxX, checkboxY, size, size, border.color, border.width)
+
+
+	// Draw check mark
+	if Raw<checked> then
+		const thickness float = 3.0
+		DrawLineEx(
+			Cast<Vector2>({ checkboxX, checkboxY }),
+			Cast<Vector2>({ checkboxX + size, checkboxY + size }),
+			thickness,
+			markColor
+		)
+		DrawLineEx(
+			Cast<Vector2>({ checkboxX + size, checkboxY }),
+			Cast<Vector2>({ checkboxX, checkboxY + size }),
+			thickness,
+			markColor
+		)
+	end
+
+	// Draw label (no extra padding boxes, just text)
+	DrawBorder(labelX, labelY, textWidth, textHeight, labelBorder.color, labelBorder.width)
+	DrawText(text, labelX, labelY, fontSize, labelTextColor)
+
+	return original != Raw<checked>
+end
+
+function GuiTextInput(text string, position Vector2) void
+	var bg Color = theme.textInput.background
+	var textColor Color = theme.textInput.textColor
+	var border GuiBorder = theme.textInput.border
+	var cursorColor Color = theme.textInput.cursorColor
+	var fontSize int = theme.textInput.fontSize
+
+	var uiTextPadding int = theme.textInput.uiTextPadding
+
+	var textWidth int = MeasureText(text, fontSize)
+
+	DrawRectangle(position.x, position.y, textWidth + uiTextPadding, fontSize + uiTextPadding, bg)
+
+	// draw border
+	DrawBorder(position.x, position.y, textWidth + uiTextPadding, fontSize + uiTextPadding, border.color, border.width)
+
+	// draw cursor
+	DrawRectangle(
+		position.x + textWidth + uiTextPadding,
+		position.y,
+		1,
+		fontSize + uiTextPadding,
+		cursorColor
+	)
+
+	// draw text
+
+	DrawText(text, position.x + uiTextPadding, position.y, fontSize, textColor)
+
+
+end

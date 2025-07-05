@@ -74,7 +74,9 @@ contexts:
     - match: \b(int|string|uint|char|boolean|void|float|ulong|uchar)\b
       scope: storage.type.neon
 
-    - match: \b(Cast|ptr|Array|Raw)\b
+      # {name}<<type>>([something])
+      # e.g: Cast<int>(a)
+    - match: \b(Cast|ptr|struct|Array|Raw)\b
       scope: support.function.builtin.neon
 
     # Conditional logic
