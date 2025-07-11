@@ -4,10 +4,22 @@ import "stdlib"
 #include <lauxlib.h>
 #include <lualib.h>
 abstract lua_State
+platform windows
+	var x int = 30
+end
+
+platform linux
+	var x int = 40
+end
+
+platform darwin
+	var x int = 50
+end
 
 var t Array<int, 0> = {0, 2}
 type tt = {
 	names Array<string, 3>
+	nameCount @const @static int
 }
 function main() int
 	return 0

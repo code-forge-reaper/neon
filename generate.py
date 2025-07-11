@@ -192,7 +192,7 @@ def generate_from(from_stmt: FromStmt) -> str:
     """
     Generate C code for a for-loop.
     """
-    code = f"for (int {from_stmt.name} = {from_stmt.start}; {from_stmt.name} <= {from_stmt.end}; {from_stmt.name}+={from_stmt.stepCount}) {{\n"
+    code = f"for (int {from_stmt.name} = {from_stmt.start}; {from_stmt.name} < {from_stmt.end}; {from_stmt.name}+={from_stmt.stepCount}) {{\n"
     code += indent_block("\n".join(generate_statement(s) for s in from_stmt.body))
     code += "\n}"
     return code
@@ -257,15 +257,18 @@ def generate_include(inc: Include) -> str:
 def generate_struct(struct: TypeDef) -> str:
     field_lines = []
     if struct.fields:
-        for name, typ in struct.fields:
+        for name, typ, attrs in struct.fields:
+            #at = (" "+attr[1:]) if attr else ""
+            at = " ".join(attr[1:] for attr in attrs) if attrs else ""
+
             if typ.startswith("Array<"):
                 base_type, length = typ[len("Array<"):-1].split(",")
                 base_type = convert_type(base_type.strip())
                 length = length.strip()
                 length = length if length != "0" else ""  # For `[]` style
-                field_lines.append(f"    {base_type} {name}[{length}];")
+                field_lines.append(f"   {at} {base_type} {name}[{length}];")
             else:
-                field_lines.append(f"    {convert_type(typ)} {name};")
+                field_lines.append(f"   {at} {convert_type(typ)} {name};")
 
         return f"typedef struct {{\n" + "\n".join(field_lines) + f"\n}} {struct.name};"
     else:

@@ -34,6 +34,8 @@ CONDITIONAL_ELSE_IF = "elseif"
 CONDITIONAL_THEN = "then"
 CONDITIONAL_IS = "is"
 
+PLATFORM_CONDITIONAL = "platform"
+
 # Block structure
 END_BLOCK = "end"
 
@@ -75,6 +77,7 @@ KEYWORDS = {
 	BOOLEAN_TRUE,
 	BOOLEAN_FALSE,
 	ABISTRACT_TYPE_DEF,
+	PLATFORM_CONDITIONAL
 }
 class TokenizeError(Exception):
 	def __init__(self, message: str, line: int, col: int, line_text: str):

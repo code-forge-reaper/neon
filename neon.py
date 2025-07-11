@@ -9,6 +9,11 @@ IMPORT_PATHS: list[str] = ["~/.neon", "./"]
 if os.getenv("NEON_HOME") is not None:
     IMPORT_PATHS.append(str(os.getenv("NEON_HOME")))
 
+currentPlatform = os.getenv("NEON_PLATFORM") or sys.platform
+if os.getenv("NEON_PLATFORM") is not None and sys.platform != currentPlatform:
+    print("you might not be able to compile to this platform")
+    print("be carefull with that")
+
 GENERIC_TYPES = {"Array", "ptr", "Cast", "struct"}# this list is used to bypass type checking, since they are used like: Array<int, 3>, ptr<int>, etc
 TYPES = {
     "int",
@@ -338,6 +343,10 @@ class Parser:
                 imported_items = self.parse_import()
                 if imported_items:
                     items.extend(imported_items)
+            elif token.type == PLATFORM_CONDITIONAL:
+                platformCode = self.parse_platform()
+                if platformCode:
+                    items.extend(platformCode)
             elif token.type == DECLARE_TYPE:
                 items.append(self.parse_struct())
             elif token.type == DECLARE_ENUM:
@@ -367,6 +376,15 @@ class Parser:
         name = self.consume("ID").value
         value = self.parse_expr()
         return Define(name, value)
+
+    def parse_platform(self) -> List[object] | None:
+        self.consume(PLATFORM_CONDITIONAL)
+        name  = self.consume("ID").value
+        block = self.parse_block({END_BLOCK})
+        self.consume(END_BLOCK)
+        if currentPlatform != name:
+            return None
+        return block
 
     # somewhat like python's import
     def parse_import(self) -> List[object] | None:
@@ -681,6 +699,10 @@ class Parser:
                 self.current().type == "OP" and self.current().value == "}"
             ):
                 field_name = self.consume("ID").value
+                attrs = []
+                while self.current().type == "ATTR":
+                    attrs.append(self.consume("ATTR").value)
+
                 field_type = self.parse_type()
                 if (
                     self.current()
@@ -688,7 +710,7 @@ class Parser:
                     and self.current().value == ";"
                 ):
                     self.consume("OP")
-                fields.append((field_name, field_type))
+                fields.append((field_name, field_type, attrs))
             self.consume_operator("}")
 
         if name in TYPES:
