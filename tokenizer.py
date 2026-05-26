@@ -6,79 +6,8 @@ class Token:
 	line   :  int
 	column	:  int
 	file   :  str
-# Declarations
-PROCEDURE = "function"
-PROCEDURE_DEFINITION = "prototype"
-IMPORT_FILE = "import"
-DECLARE_VARIABLE = "var"
-DECLARE_CONSTANT = "const"
-DEFINE_MACRO = "define"
-DECLARE_ENUM = "enum"
-DECLARE_TYPE = "type"
-PP_DIRECTIVE = "PP_DIRECTIVE"
-ABISTRACT_TYPE_DEF = "abstract" # this shouldn't be passed as a node, but used to create an abstract type, aka, a type that is defined by some library, but not ourselves
-# Control flow
 
-LOOP_FROM = "from"
-LOOP_TO = "to"
-LOOP_STEP = "step"
-LOOP_DO = "do"
-LOOP_IN = "in"
-LOOP_AS = "as"
-LOOP_WHILE = "while"
-
-# Conditional logic
-CONDITIONAL_IF = "if"
-CONDITIONAL_ELSE = "else"
-CONDITIONAL_ELSE_IF = "elseif"
-CONDITIONAL_THEN = "then"
-CONDITIONAL_IS = "is"
-
-PLATFORM_CONDITIONAL = "platform"
-
-# Block structure
-END_BLOCK = "end"
-
-# Functions
-RETURN_FROM_PROCEDURE = "return"
-
-# Other
-SELECTOR_STATEMENT = "selector"
-
-
-# Booleans
-BOOLEAN_TRUE = "true"
-BOOLEAN_FALSE = "false"
-
-KEYWORDS = {
-	PROCEDURE,
-	PROCEDURE_DEFINITION,
-	IMPORT_FILE,
-	DECLARE_VARIABLE,
-	DECLARE_CONSTANT,
-	DEFINE_MACRO,
-	DECLARE_ENUM,
-	DECLARE_TYPE,
-	LOOP_FROM,
-	LOOP_TO,
-	LOOP_STEP,
-	LOOP_DO,
-	LOOP_IN,
-	LOOP_AS,
-	LOOP_WHILE,
-	CONDITIONAL_IF,
-	CONDITIONAL_ELSE,
-	CONDITIONAL_ELSE_IF,
-	CONDITIONAL_THEN,
-	CONDITIONAL_IS,
-	END_BLOCK,
-	RETURN_FROM_PROCEDURE,
-	SELECTOR_STATEMENT,
-	BOOLEAN_TRUE,
-	BOOLEAN_FALSE,
-	ABISTRACT_TYPE_DEF,
-	PLATFORM_CONDITIONAL
-}
+KEYWORDS = set()
 class TokenizeError(Exception):
 	def __init__(self, message: str, line: int, col: int, line_text: str):
 		pointer = " " * (col) + "^"
@@ -96,7 +25,7 @@ def tokenize(source: str, file: str) -> list[Token]:
 	index = 0
 	lines = source.splitlines()
 	def addToken(type, value, line, col):
-		tokens.append(Token(type, value, line,col,file))
+		tokens.append(Token(type, value, line+1,col+1,file))
 	while index < len(source):
 		currentToken = source[index]
 		if currentToken in " \t":
@@ -128,7 +57,7 @@ def tokenize(source: str, file: str) -> list[Token]:
 				index+=1
 				column+=1
 
-			addToken(PP_DIRECTIVE, source[start:index], line, column)
+			addToken("PP_DIRECTIVE", source[start:index], line, column)
 			continue
 		if currentToken == "/" and index + 1< len(source):
 			if source[index+1] == "/":
@@ -227,18 +156,42 @@ def tokenize(source: str, file: str) -> list[Token]:
 				)
 
 			continue
+		# Negative numbers (including hex)
 		if currentToken == "-":
 			start = index
 			start_col = column
+
 			if index + 1 < len(source):
 				next_char = source[index + 1]
+
+				# Negative hex
+				if (
+					next_char == "0"
+					and index + 3 < len(source)
+					and source[index + 2] in "xX"
+					and source[index + 3] in "0123456789abcdefABCDEF"
+				):
+					index += 3
+					column += 3
+					while (
+						index < len(source)
+						and source[index] in "0123456789abcdefABCDEF"
+					):
+						index += 1
+						column += 1
+					addToken("NUMBER", source[start:index], line, start_col)
+					continue
+
+				# Negative decimal
 				if next_char.isdigit():
-					# Negative number
 					index += 1
 					column += 1
+
 					while index < len(source) and source[index].isdigit():
 						index += 1
 						column += 1
+
+					# Float support
 					if (
 						index < len(source)
 						and source[index] == "."
@@ -250,25 +203,41 @@ def tokenize(source: str, file: str) -> list[Token]:
 						while index < len(source) and source[index].isdigit():
 							index += 1
 							column += 1
+
 					addToken("NUMBER", source[start:index], line, start_col)
 					continue
-				elif next_char.isalpha() or next_char == "_":
-					# Negative identifier
-					index += 1
-					column += 1
-					while index < len(source) and (source[index].isalnum() or source[index] == "_"):
-						index += 1
-						column += 1
-					addToken("NEG_ID", source[start:index], line, start_col)
-					continue
 
-		# Number literal (int and float)
+		# Positive hex literal
+		if (
+			currentToken == "0"
+			and index + 2 < len(source)
+			and source[index + 1] in "xX"
+			and source[index + 2] in "0123456789abcdefABCDEF"
+		):
+			start = index
+			start_col = column
+			index += 2
+			column += 2
+
+			while (
+				index < len(source)
+				and source[index] in "0123456789abcdefABCDEF"
+			):
+				index += 1
+				column += 1
+
+			addToken("NUMBER", source[start:index], line, start_col)
+			continue
+
+		# Decimal number (int/float)
 		if currentToken.isdigit():
 			start = index
 			start_col = column
+
 			while index < len(source) and source[index].isdigit():
 				index += 1
 				column += 1
+
 			if (
 				index < len(source)
 				and source[index] == "."
@@ -280,6 +249,7 @@ def tokenize(source: str, file: str) -> list[Token]:
 				while index < len(source) and source[index].isdigit():
 					index += 1
 					column += 1
+
 			addToken("NUMBER", source[start:index], line, start_col)
 			continue
 		if currentToken.isalpha() or currentToken == "_":
@@ -294,7 +264,10 @@ def tokenize(source: str, file: str) -> list[Token]:
 			else:
 				addToken("ID", val, line, start_col)
 			continue
-
+		if currentToken == "-" and source[index+1] == ">":
+			addToken("arrow", "->", line, start_col)
+			index+=2
+			continue
 		# Operators and punctuation (including '&', '!', etc.)
 		if currentToken in "=!<>+-*/&%|":
 			if index + 1 < len(source):
@@ -324,6 +297,8 @@ if __name__ == "__main__":
 	source = '''
 	prototype foo(...);
 	var x int = -42.5;
+	var y int = 0x0000;
+	var z int = -0x2A;
 	// comment
 	/* multi
 		line */

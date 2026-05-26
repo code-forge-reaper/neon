@@ -1,3 +1,10 @@
+// in theory, you can have a cleaner "src/<platform>/<implementations>.neon"
+// and just
+/*
+platform <name>
+	import "<path>"
+end
+*/
 platform windows
 	var x int = 30
 end
@@ -10,6 +17,6 @@ platform darwin
 	var x int = 50
 end
 
-function test() void
-
+func main() -> int
+	return x
 end

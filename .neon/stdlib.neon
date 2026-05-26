@@ -1,44 +1,48 @@
 type FILE
-prototype printf(fmt string, ...) int
-prototype fopen(path string, mode string) ptr<FILE>
-prototype fclose(fd ptr<FILE>) int
-prototype rewind(fd ptr<FILE>) void
-prototype fseek(fd ptr<FILE>, offset ulong, position int) int
-prototype ftell(fd ptr<FILE>) uint
-prototype feof(fd ptr<FILE>) int
-prototype fprintf(fd ptr<FILE>, fmt string, ...) int
-prototype ferror(fd ptr<FILE>) int
-prototype vsnprintf(buf ptr<void>, size ulong, fmt string, ...) int
-prototype perror(msg string) void
-prototype exit(code int) void
+prototype printf(fmt string, ...) -> int
+prototype fopen(path string, mode string) -> ptr<FILE>
+prototype fclose(fd ptr<FILE>) -> int
+prototype rewind(fd ptr<FILE>) -> void
+prototype fseek(fd ptr<FILE>, offset ulong, position int) -> int
+prototype ftell(fd ptr<FILE>) -> uint
+prototype feof(fd ptr<FILE>) -> int
+prototype fprintf(fd ptr<FILE>, fmt string, ...) -> int
+prototype ferror(fd ptr<FILE>) -> int
+prototype snprintf(buf ptr<char>, size ulong, fmt string, ...) -> int
 
-prototype malloc(size ulong) ptr<void>
-prototype free(mem ptr<void>) void
+#define panicf(fmt, ...) do{printf("%s:%i: " fmt "\n", __FILE__, __LINE__, __VA_ARGS__);exit(1);}while(0)
+
+prototype perror(msg string) -> void
+prototype exit(code int) -> void
+prototype abs(i int) -> int
+prototype malloc(size ulong) -> ptr<void>
+prototype free(mem ptr<void>) -> void
 const FILE_START int = 0   /* Seek from beginning of file.  */
 const FILE_CURRENT int = 1   /* Seek from current position.  */
 const FILE_END int = 2   /* Seek from end of file.  */
 
 prototype fread(
     dataBuffer ptr<void>, size ulong,
-    nbytes ulong, fileStream ptr<FILE>) ulong
+    nbytes ulong, fileStream ptr<FILE>) -> ulong
 
 var nil ptr<void> = ptr<void>(0)
 // null is defined like this in __stddef_null.h 
 // #define NULL ((void*)0)
 
-function clamp(target float, min float, max float) float
+func clamp(target float, min float, max float) -> float
 	if target >= max then return max
 	elseif target <= min then return min
 	else return target end
 end
 
-function assert(cond boolean, msg string) void
+func assert(cond boolean, msg string) -> void
 	if ! cond then
 		printf("Assertion failed: %s\n", msg)
 		exit(1)
 	end
 end
-function Max(a int, b int) int
+
+func Max(a int, b int) -> int
 	if a > b then
 		return a
 	else
@@ -46,10 +50,15 @@ function Max(a int, b int) int
 	end
 end
 
-function Min(a int, b int) int
+func Min(a int, b int) -> int
 	if a < b then
 		return a
 	else
 		return b
 	end
+end
+
+func Sign(x float) -> float
+	if x < 0 then return -1 end
+	return 1
 end
