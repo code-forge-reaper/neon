@@ -2,8 +2,7 @@
 from tokenizer import tokenize, KEYWORDS
 import sys
 import os
-from dataclasses import dataclass, field
-from typing import List, NoReturn, Optional, Tuple, Union, Set
+from nodes import *
 
 sections = {"code": [], "decls": []}
 
@@ -23,27 +22,21 @@ ABISTRACT_TYPE_DEF = "abstract"  # this shouldn't be passed as a node, but used 
 
 
 LOOP_FOR = "for"
-LOOP_DO = "do"
-LOOP_IN = "in"
 LOOP_WHILE = "while"
 
 # Conditional logic
 CONDITIONAL_IF = "if"
 CONDITIONAL_ELSE = "else"
 CONDITIONAL_ELSE_IF = "elseif"
-CONDITIONAL_THEN = "then"
 CONDITIONAL_IS = "is"
 
 PLATFORM_CONDITIONAL = "platform"
-
-# Block structure
-END_BLOCK = "end"
 
 # Functions
 RETURN_FROM_PROCEDURE = "return"
 
 # Other
-SELECTOR_STATEMENT = "selector"
+SELECTOR_STATEMENT = "case"
 
 
 # Booleans
@@ -60,15 +53,11 @@ _KEYWORDS = {
     DECLARE_ENUM,
     DECLARE_TYPE,
     LOOP_FOR,
-    LOOP_DO,
-    LOOP_IN,
     LOOP_WHILE,
     CONDITIONAL_IF,
     CONDITIONAL_ELSE,
     CONDITIONAL_ELSE_IF,
-    CONDITIONAL_THEN,
     CONDITIONAL_IS,
-    END_BLOCK,
     RETURN_FROM_PROCEDURE,
     SELECTOR_STATEMENT,
     BOOLEAN_TRUE,
@@ -105,258 +94,6 @@ TYPES = {
     "ulong",
     "uchar",
 }
-
-
-class ParserError:
-    def __init__(
-        self, message: str, token: Optional["Token"] = None, line_text: str = ""
-    ) -> NoReturn:
-        if token:
-            pointer = "^" * (len(line_text))
-            full_message = (
-                f"{token.file}:{token.line}: {line_text}\n{pointer}\n{message}"
-            )
-        else:
-            full_message = f"Syntax error at end of input:\n{message}"
-
-        print(full_message)
-        exit(1)
-
-
-# --- AST Node Definitions ---
-@dataclass
-class Program:
-    items: List[object]
-
-
-@dataclass
-class PreprocessorDirective:
-    directive: str
-
-
-@dataclass
-class FunctionDef:
-    name: str
-    ret_type: str
-    attributes: List[str] = field(default_factory=list)
-    args: List["ArgDef"] = field(default_factory=list)
-    body: List[object] = field(default_factory=list)
-
-
-@dataclass
-class StubDef:
-    name: str
-    ret_type: str
-    attributes: List[str] = field(default_factory=list)
-    args: List["ArgDef"] = field(default_factory=list)
-
-
-@dataclass
-class ArgDef:
-    name: str
-    arg_type: str
-    variadic: bool = False
-
-
-@dataclass
-class VarDecl:
-    name: str
-    var_type: str | None
-    var_attr: str | None
-    init_expr: Optional[object] = None
-
-
-@dataclass
-class ConstDecl:
-    name: str
-    const_type: str
-    const_attr: str
-    init_expr: Optional[object] = None
-
-
-@dataclass
-class Assignment:
-    target: object
-    expr: object
-    op: str = "="
-
-
-@dataclass
-class ReturnStmt:
-    expr: object | None
-
-
-@dataclass
-class ExprStmt:
-    expr: object
-
-
-@dataclass
-class BinOp:
-    left: object
-    op: str
-    right: object
-
-
-@dataclass
-class SelectorStmt:
-    target: str
-    cases: List[object]
-    default: object
-
-
-@dataclass
-class CaseStmt:
-    value: str
-    body: List[object]
-
-
-@dataclass
-class UnaryOp:
-    op: str
-    operand: object
-
-
-@dataclass
-class Num:
-    value: Union[int, float]
-
-    def __init__(self, value: str):
-        if value.startswith("0x"):
-            self.value = int(value, 16)
-        else:
-            self.value = float(value) if "." in value else int(value)
-
-
-@dataclass
-class Str:
-    value: str
-
-    def __init__(self, value: str):
-        self.value = value
-
-
-@dataclass
-class Char:
-    value: str
-
-    def __init__(self, value: str):
-        self.value = value
-
-
-@dataclass
-class Bool:
-    value: bool
-
-    def __init__(self, value: str):
-        self.value = value == BOOLEAN_TRUE
-
-
-@dataclass
-class Var:
-    name: str
-
-
-@dataclass
-class MemberAccess:
-    obj: object
-    member: str
-
-
-@dataclass
-class AttributeAccess:
-    obj: object
-    attribute: str
-
-
-@dataclass
-class IndexAccess:
-    obj: object
-    index: object
-
-
-@dataclass
-class FuncCall:
-    func_name: str
-    args: List[object]
-
-
-@dataclass
-class Include:
-    header: str
-
-
-@dataclass
-class TypeDef:
-    name: str
-    fields: Optional[List[Tuple[str, str]]]
-
-
-@dataclass
-class EnumDef:
-    name: str
-    fields: List[Tuple[str, int]]
-
-
-@dataclass
-class IfStmt:
-    condition: object
-    true_body: List[object]
-    false_body: List[object] = field(default_factory=list)
-
-
-@dataclass
-class LoopStmt:
-    condition: object
-    body: List[object]
-
-
-@dataclass
-class ForStmt:
-    init: object  # e.g., var i int = 0
-    condition: object  # e.g., i < 10
-    update: object  # e.g., i = i + 1
-    body: List[object]
-
-
-@dataclass
-class StructLiteral:
-    fields: List[Tuple[Optional[str], object]]
-
-
-@dataclass
-class Define:
-    name: str
-    value: object
-
-
-# New AST nodes for casting
-@dataclass
-class Cast:
-    type_name: str
-    expr: object
-
-
-@dataclass
-class PCast:
-    type_name: str
-    expr: object
-
-
-@dataclass
-class StructVar:  # like "struct sockaddr_in addr" "var addr struct<sockaddr_in>"
-    type_name: str
-
-
-@dataclass
-class Deref:
-    expr: str
-
-
-@dataclass
-class Array:
-    array_type: str
-    array_size: int | None | str
 
 
 # --- Parser ---
@@ -501,8 +238,9 @@ class Parser:
     def parse_platform(self) -> List[object] | None:
         self.consume(PLATFORM_CONDITIONAL)
         name = self.consume("ID").value
-        block = self.parse_block({END_BLOCK})
-        self.consume(END_BLOCK)
+
+        block = self.parse_block()
+
         if currentPlatform != name:
             return None
         return block
@@ -591,9 +329,10 @@ class Parser:
         ret_type = self.parse_type()
 
         # Parse procedure body.
-        body = []
-        body = self.parse_block(stop_tokens={END_BLOCK})
-        self.consume(END_BLOCK)
+
+        self.consume_operator("{")
+        body = self.parse_until(stop_type="OP", stop_value="}")
+        self.consume_operator("}")
         return FunctionDef(name, ret_type, attributes, args, body)
 
     def parse_arg(self) -> ArgDef:
@@ -720,69 +459,53 @@ class Parser:
     def parse_selector(self) -> SelectorStmt:
         self.consume(SELECTOR_STATEMENT)
         target = self.consume("ID").value
+        self.consume(CONDITIONAL_IS)
+        self.consume_operator("{")
         cases = []
-        while self.current() and self.current().type == CONDITIONAL_IS:
-            self.consume(CONDITIONAL_IS)
+
+        while self.current() and self.current().value not in ["}", "*"]:
             value = self.parse_expr()
-            if self.current().type == CONDITIONAL_THEN:
-                self.consume(CONDITIONAL_THEN)
-                body = self.parse_block(stop_tokens={END_BLOCK})
+            if self.current().type == "arrow":
+                self.consume("arrow")
+                self.consume_operator("{")
+                body = self.parse_until(stop_type="OP", stop_value="}")
+                self.consume_operator("}")
                 cases.append(CaseStmt(value, body))
-                self.consume(END_BLOCK)
             else:  # i do not recomend using fall-through in selector/switch
                 cases.append(CaseStmt(value, []))
-
-        self.consume(
-            CONDITIONAL_ELSE
-        )  # lets be honest, it is best practice to always have a default in there
-        defaultBody = self.parse_block(stop_tokens={END_BLOCK})
-        self.consume(END_BLOCK)
-        self.consume(END_BLOCK)  # this closes off the selector
+        defaultBody = []
+        if self.current() and self.current().value == "*":
+            self.consume_operator(
+                "*"
+            )  # lets be honest, it is best practice to always have a default in there
+            self.consume_operator("{")
+            defaultBody = self.parse_until(stop_type="OP", stop_value="}")
+            self.consume_operator("}")
+        self.consume_operator("}")  # this closes off the selector
 
         return SelectorStmt(target, cases, defaultBody)
 
-    def parse_if(self) -> IfStmt | SelectorStmt:
-        self.consume(CONDITIONAL_IF)
+    def parse_if(self, IF=CONDITIONAL_IF) -> IfStmt:
+        self.consume(IF)
         condition = self.parse_expr()
-        self.consume(CONDITIONAL_THEN)
-        true_body = self.parse_block(
-            stop_tokens={CONDITIONAL_ELSE_IF, CONDITIONAL_ELSE, END_BLOCK}
-        )
+        true_body = self.parse_block()
         false_body = []
         if self.current() and self.current().type == CONDITIONAL_ELSE_IF:
-            false_body.append(self.parse_if_chain())
+            false_body.append(self.parse_if(CONDITIONAL_ELSE_IF))
         elif self.current() and self.current().type == CONDITIONAL_ELSE:
             self.consume(CONDITIONAL_ELSE)
-            false_body = self.parse_block(stop_tokens={END_BLOCK})
-        self.consume(END_BLOCK)
-        return IfStmt(condition, true_body, false_body)
-
-    def parse_if_chain(self) -> IfStmt:
-        self.consume(CONDITIONAL_ELSE_IF)
-        condition = self.parse_expr()
-        self.consume(CONDITIONAL_THEN)
-        true_body = self.parse_block(
-            stop_tokens={CONDITIONAL_ELSE_IF, CONDITIONAL_ELSE, END_BLOCK}
-        )
-        false_body = []
-        if self.current() and self.current().type == CONDITIONAL_ELSE_IF:
-            false_body.append(self.parse_if_chain())
-        elif self.current() and self.current().type == CONDITIONAL_ELSE:
-            self.consume(CONDITIONAL_ELSE)
-            false_body = self.parse_block(stop_tokens={END_BLOCK})
+            false_body = self.parse_block()
         return IfStmt(condition, true_body, false_body)
 
     def parse_loop(self) -> LoopStmt:
         self.consume(LOOP_WHILE)
         condition = self.parse_expr()
-        self.consume(LOOP_DO)
-        body = self.parse_block(stop_tokens={END_BLOCK})
-        self.consume(END_BLOCK)
+        body = self.parse_block()
+
         return LoopStmt(condition, body)
 
     def parse_for(self):
         self.consume(LOOP_FOR)
-        self.consume_operator("(")
 
         # 1. Initialization (e.g., var i int = 0)
         init = self.parse_statement()
@@ -795,12 +518,7 @@ class Parser:
 
         # 3. Update (e.g., i = i + 1)
         update = self.parse_statement()
-
-        self.consume_operator(")")
-        self.consume(LOOP_DO)
-
-        body = self.parse_block(stop_tokens={END_BLOCK})
-        self.consume(END_BLOCK)
+        body = self.parse_block()
 
         return ForStmt(init, condition, update, body)
 
@@ -875,18 +593,10 @@ class Parser:
         self.consume_operator("}")
         return EnumDef(name, fields)
 
-    def parse_block(self, stop_tokens: Set[str]) -> List[object]:
-        block = []
-        while self.current() and self.current().type not in stop_tokens:
-            stmt = self.parse_statement()
-            block.append(stmt)
-            # Consume a semicolon if present.
-            if (
-                self.current()
-                and self.current().type == "OP"
-                and self.current().value == ";"
-            ):
-                self.consume("OP")
+    def parse_block(self) -> List[object]:
+        self.consume_operator("{")
+        block = self.parse_until("OP", "}")
+        self.consume_operator("}")
         return block
 
     def parse_until(self, stop_type: str, stop_value: str) -> List[object]:

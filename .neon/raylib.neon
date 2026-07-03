@@ -109,7 +109,6 @@ prototype SetMouseOffset(offsetX int, offsetY int)->void
 prototype SetMouseScale(scaleX float, scaleY float)->void
 prototype GetMouseWheelMove()->float
 prototype GetMouseWheelMoveV()->Vector2
-prototype SetMouseCursor(cursor int)->void                        // Set mouse cursor
 prototype SetMouseCursor(cursor int)->void
 prototype GetColor(v int)->Color
 prototype TextFormat(text string, ...)->string

@@ -5,18 +5,17 @@ platform <name>
 	import "<path>"
 end
 */
-platform windows
+platform windows{
 	var x int = 30
-end
+}
 
-platform linux
+platform linux{
 	var x int = 40
-end
+}
 
-platform darwin
+platform darwin{
 	var x int = 50
-end
+}
 
 func main() -> int
-	return x
-end
+{return x}

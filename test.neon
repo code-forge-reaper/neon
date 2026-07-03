@@ -1,13 +1,21 @@
-import "raylib"
+import "stdlib"
 func main() -> int
-	InitWindow(800,600,"testing")
-	SetTargetFPS(60)
-	while !WindowShouldClose() do
-		BeginDrawing()
-		ClearBackground(BLACK)
-		DrawText("Looks like lua, but transpiles to C", 20,20,30, RED)
-		EndDrawing()
-	end
-
+{
+	for var x int = 0; x < 40; x+=1{
+		case x is {
+			24 -> {
+				printf("24 :D\n")
+			}
+			* {
+				printf("x = %i\n", x)
+			}
+		}
+	}
+	var y int = 24
+	while y > 0 {
+		printf("y = %i\n", y)
+		y-=1
+	}
+	printf("hello, world\n")
 	return 0
-end
+}
