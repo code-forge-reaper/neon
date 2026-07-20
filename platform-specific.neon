@@ -1,9 +1,9 @@
 // in theory, you can have a cleaner "src/<platform>/<implementations>.neon"
 // and just
 /*
-platform <name>
+platform <name>{
 	import "<path>"
-end
+}
 */
 platform windows{
 	var x int = 30

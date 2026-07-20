@@ -73,8 +73,10 @@ if os.getenv("NEON_HOME") is not None:
 
 currentPlatform = os.getenv("NEON_PLATFORM") or sys.platform
 if os.getenv("NEON_PLATFORM") is not None and sys.platform != currentPlatform:
-    print("you might not be able to compile to this platform")
-    print("be carefull with that")
+    print("-----------", file=sys.stderr)
+    print("you might not be able to compile to this platform", file=sys.stderr)
+    print("be carefull with that", file=sys.stderr)
+    print("-----------", file=sys.stderr)
 
 GENERIC_TYPES = {
     "Array",
@@ -325,8 +327,11 @@ class Parser:
             if self.current() and self.current().value == ",":
                 self.consume_operator(",")
         self.consume_operator(")")
-        self.consume("arrow")
-        ret_type = self.parse_type()
+        if self.current() and self.current().type == "arrow":
+            self.consume("arrow")
+            ret_type = self.parse_type()
+        else:
+            ret_type = "void"
 
         # Parse procedure body.
 

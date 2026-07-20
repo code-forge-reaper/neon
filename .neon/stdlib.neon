@@ -1,4 +1,9 @@
+/*
+no clue what gcc/clang hides in it
+nor if there's some kernel thing i need to read
+*/
 type FILE
+
 prototype printf(fmt string, ...) -> int
 prototype fopen(path string, mode string) -> ptr<FILE>
 prototype fclose(fd ptr<FILE>) -> int
@@ -17,9 +22,11 @@ prototype exit(code int) -> void
 prototype abs(i int) -> int
 prototype malloc(size ulong) -> ptr<void>
 prototype free(mem ptr<void>) -> void
-const FILE_START int = 0   /* Seek from beginning of file.  */
-const FILE_CURRENT int = 1   /* Seek from current position.  */
-const FILE_END int = 2   /* Seek from end of file.  */
+enum FileSeekPositions = {
+    FILE_START      /* Seek from beginning of file.  */
+    FILE_CURRENT    /* Seek from current position.   */
+    FILE_END        /* Seek from end of file.        */
+}
 
 prototype fread(
     dataBuffer ptr<void>, size ulong,
