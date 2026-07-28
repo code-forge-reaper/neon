@@ -375,8 +375,6 @@ class Parser:
         self.consume(PROCEDURE_DEFINITION)
         name = self.consume("ID").value
         attributes = []
-        while self.current() and self.current().type == "ATTR":
-            attributes.append(self.consume("ATTR").value)
 
         args = []
         self.consume_operator("(")
@@ -385,6 +383,8 @@ class Parser:
             if self.current() and self.current().value == ",":
                 self.consume_operator(",")
         self.consume_operator(")")
+        while self.current() and self.current().type == "ATTR":
+            attributes.append(self.consume("ATTR").value)
         self.consume("arrow")
         ret_type = self.parse_type()
 
@@ -396,8 +396,6 @@ class Parser:
 
         # Optional attributes.
         attributes = []
-        while self.current() and self.current().type == "ATTR":
-            attributes.append(self.consume("ATTR").value)
 
         # Parse arguments.
         args = []
@@ -408,13 +406,14 @@ class Parser:
             if self.current() and self.current().value == ",":
                 self.consume_operator(",")
         self.consume_operator(")")
+        # Parse procedure body.
+        while self.current() and self.current().type == "ATTR":
+            attributes.append(self.consume("ATTR").value)
         if self.current() and self.current().type == "arrow":
             self.consume("arrow")
             ret_type = self.parse_type()
         else:
             ret_type = "void"
-
-        # Parse procedure body.
 
         self.consume_operator("{")
         body = self.parse_until(stop_type="OP", stop_value="}")
