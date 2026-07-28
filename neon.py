@@ -153,76 +153,100 @@ class Parser:
             return True
         return False
 
-    def parse(self) -> Program:
-        decls = []
-        code = []
+    def _platform_matches(self, name: str) -> bool:
+        """Check whether the given platform name matches the current target platform."""
+        if name == currentPlatform:
+            return True
+        # Common aliases / normalizations
+        if name == "windows" and currentPlatform in ("win32", "cygwin", "msys"):
+            return True
+        if name == "linux" and currentPlatform.startswith("linux"):
+            return True
+        # Allow explicit android even if underlying platform reports as linux
+        if name == "android" and currentPlatform in ("android", "linux"):
+            # Prefer exact match when NEON_PLATFORM was set; otherwise treat linux as possible android host
+            if os.getenv("NEON_PLATFORM") == "android" or currentPlatform == "android":
+                return True
+        return False
 
-        while self.current() is not None:
-            token = self.current()
-            if not token:
-                break
+    def _parse_one_toplevel(self) -> List[object]:
+        """
+        Parse a single top-level construct and return a list of AST nodes that
+        should be added to the program (may be empty, one, or several).
+        Used by both the main parse loop and platform blocks so that
+        platform can contain the same things as the top level (imports,
+        functions, prototypes, types, etc.).
+        """
+        token = self.current()
+        if not token:
+            return []
 
-            if token.type == PP_DIRECTIVE:
-                decls.append(self.parse_preprocessor_directive())
+        if token.type == PP_DIRECTIVE:
+            return [self.parse_preprocessor_directive()]
 
-            elif token.type == PROCEDURE:
-                # Parse the complete function definition
-                func_node = self.parse_proc()
+        elif token.type == PROCEDURE:
+            # Parse the complete function definition
+            func_node = self.parse_proc()
 
-                # Automatically create a stub (prototype) for the declaration section
+            # Automatically create a stub (prototype) for the declaration section
+            result: List[object] = []
+            if func_node.name != "main":
                 stub_node = StubDef(
                     name=func_node.name,
                     ret_type=func_node.ret_type,
                     attributes=func_node.attributes,
                     args=func_node.args,
                 )
-                if func_node.name != "main":
-                    decls.append(stub_node)
-                code.append(func_node)
+                result.append(stub_node)
+            result.append(func_node)
+            return result
 
-            elif token.type == PROCEDURE_DEFINITION:
-                decls.append(self.parse_stub())
+        elif token.type == PROCEDURE_DEFINITION:
+            return [self.parse_stub()]
 
-            elif token.type == IMPORT_FILE:
-                # Parse imported file
-                imported_items = self.parse_import()
-                if imported_items:
-                    # Separate imported items into decls and code to maintain correct order
-                    # The imported_items list is already decls + code, so we iterate and sort
-                    for item in imported_items:
-                        if isinstance(item, FunctionDef):
-                            code.append(item)
-                        else:
-                            decls.append(item)
+        elif token.type == IMPORT_FILE:
+            imported_items = self.parse_import()
+            return imported_items if imported_items else []
 
-            elif token.type == PLATFORM_CONDITIONAL:
-                platformCode = self.parse_platform()
-                if platformCode:
-                    for item in platformCode:
-                        # Assuming platform blocks contain vars or statements.
-                        # Since function definition isn't supported inside blocks,
-                        # most items here will likely be declarations or global logic
-                        if isinstance(item, FunctionDef):
-                            code.append(item)
-                        else:
-                            decls.append(item)
+        elif token.type == PLATFORM_CONDITIONAL:
+            platform_code = self.parse_platform()
+            return platform_code if platform_code else []
 
-            elif token.type == DECLARE_TYPE:
-                decls.append(self.parse_struct())
-            elif token.type == DECLARE_ENUM:
-                decls.append(self.parse_enum())
-            elif token.type == ABISTRACT_TYPE_DEF:
-                self.consume(ABISTRACT_TYPE_DEF)
-                name = self.consume("ID").value
-                TYPES.add(name)
-            elif token.type == DEFINE_MACRO:
-                decls.append(self.parse_define())
-            elif token.type == DECLARE_VARIABLE:
-                decls.append(self.parse_var_decl())
-            elif token.type == DECLARE_CONSTANT:
-                decls.append(self.parse_const_decl())
-            else:
-                self.error(f"Unexpected token at top level: {token.type}", token)
+        elif token.type == DECLARE_TYPE:
+            return [self.parse_struct()]
+
+        elif token.type == DECLARE_ENUM:
+            return [self.parse_enum()]
+
+        elif token.type == ABISTRACT_TYPE_DEF:
+            self.consume(ABISTRACT_TYPE_DEF)
+            name = self.consume("ID").value
+            TYPES.add(name)
+            return []  # abstract only registers the type name
+
+        elif token.type == DEFINE_MACRO:
+            return [self.parse_define()]
+
+        elif token.type == DECLARE_VARIABLE:
+            return [self.parse_var_decl()]
+
+        elif token.type == DECLARE_CONSTANT:
+            return [self.parse_const_decl()]
+
+        else:
+            self.error(f"Unexpected token at top level: {token.type}", token)
+
+    def parse(self) -> Program:
+        decls = []
+        code = []
+
+        while self.current() is not None:
+            items = self._parse_one_toplevel()
+            for item in items:
+                if isinstance(item, FunctionDef):
+                    code.append(item)
+                else:
+                    decls.append(item)
 
         # Return combined program with declarations first, then code
         return Program(decls + code)
@@ -238,14 +262,71 @@ class Parser:
         return Define(name, value)
 
     def parse_platform(self) -> List[object] | None:
+        """
+        Parse a platform filter block, similar to #ifdef but at the language level.
+
+        Syntax:
+            platform <name> { ... }
+            platform <name> or <name> or ... { ... }
+
+        The block may contain any top-level items (imports, functions, prototypes,
+        types, vars, etc.).  Only the items belonging to a matching platform are
+        kept in the AST; non-matching platforms are discarded entirely.
+
+        Non-matching blocks are skipped with a cheap balanced-brace token walk
+        so we never build AST nodes or evaluate imports/expressions inside them.
+        """
         self.consume(PLATFORM_CONDITIONAL)
-        name = self.consume("ID").value
 
-        block = self.parse_block()
+        # Collect one or more platform names separated by the identifier "or"
+        platforms: List[str] = [self.consume("ID").value]
+        while (
+            self.current()
+            and self.current().type == "ID"
+            and self.current().value == "or"
+        ):
+            self.consume("ID")  # the "or" itself
+            platforms.append(self.consume("ID").value)
 
-        if currentPlatform != name:
+        # Require a block
+        if not (
+            self.current()
+            and self.current().type == "OP"
+            and self.current().value == "{"
+        ):
+            self.error(
+                "Expected '{' after platform specifier (platform filters must be blocks)",
+                self.current(),
+            )
+
+        matches = any(self._platform_matches(p) for p in platforms)
+
+        if not matches:
+            # Cheap skip: just walk tokens counting brace depth.
+            # We never call the full statement/expression/import parsers.
+            self.consume_operator("{")
+            depth = 1
+            while self.current() is not None and depth > 0:
+                tok = self.current()
+                if tok.type == "OP":
+                    if tok.value == "{":
+                        depth += 1
+                    elif tok.value == "}":
+                        depth -= 1
+                self.pos += 1  # advance without any further interpretation
+            if depth != 0:
+                self.error("Unterminated platform block", self.current())
             return None
-        return block
+
+        # Matching platform → full parse (same as before)
+        self.consume_operator("{")
+        items: List[object] = []
+        while self.current() and not (
+            self.current().type == "OP" and self.current().value == "}"
+        ):
+            items.extend(self._parse_one_toplevel())
+        self.consume_operator("}")
+        return items
 
     # somewhat like python's import
     def parse_import(self) -> List[object] | None:
@@ -625,7 +706,8 @@ class Parser:
         while (
             self.current()
             and self.current().type == "OP"
-            and self.current().value in {"==", "!=", ">", "<", ">=", "<=", "&&", "||"}
+            and self.current().value
+            in {"==", "!=", ">", "<", ">=", "<=", "&&", "||", "|"}
         ):
             op = self.consume("OP").value
             right = self.parse_arith()
