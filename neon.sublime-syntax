@@ -61,6 +61,9 @@ contexts:
   numbers:
     - match: \b-?\d+(\.\d+)?\b
       scope: constant.numeric.neon
+    # also catch hex if you ever want it highlighted
+    - match: \b-?0[xX][0-9a-fA-F]+\b
+      scope: constant.numeric.hex.neon
 
   keywords:
     # Declarations & definitions
@@ -68,37 +71,57 @@ contexts:
       scope: storage.modifier.neon
 
     # Control flow
-    - match: \b(for|do|in|while|break|continue)\b
+    - match: \b(for|while|break|continue)\b
       scope: keyword.control.flow.neon
 
-    - match: \b(int|string|uint|char|boolean|void|float|ulong|uchar)\b
-      scope: storage.type.neon
-
-      # {name}<<type>>([something])
-      # e.g: Cast<int>(a)
-    - match: \b(Cast|ptr|struct|Array|Raw)\b
-      scope: support.function.builtin.neon
-
     # Conditional logic
-    - match: \b(if|elseif|else|then|is)\b
+    - match: \b(if|elseif|else|is)\b
       scope: keyword.control.conditional.neon
 
     # Block delimiters & return
-    - match: \b(end|return)\b
+    - match: \b(return)\b
       scope: keyword.control.block.neon
 
     # Case selector
     - match: \b(case)\b
       scope: keyword.control.case.neon
 
-    - match: \b(type|platform)\b\s+(\w+)
-      captures:
-        1: entity.name.type.neon
+    # Platform filter (the important new bit)
+    - match: \b(platform)\b
+      scope: keyword.control.platform.neon
+      push: platform_names
+
+    # Type declaration
+    - match: \b(type)\b
       scope: storage.type.neon
+
+  platform_names:
+    # the first (or subsequent) platform identifier
+    - match: \b\w+\b
+      scope: entity.name.platform.neon
+    # the "or" connector
+    - match: \bor\b
+      scope: keyword.operator.logical.neon
+    # once we hit anything else (usually '{') we pop back
+    - match: '(?=\{)'
+      pop: true
+    - match: '.|\n'
+      pop: true
+
+  types:
+    - match: \b(int|string|uint|char|boolean|void|float|ulong|uchar)\b
+      scope: storage.type.neon
+
+  builtins:
+    # {name}<<type>>([something])
+    # e.g: Cast<int>(a)
+    - match: \b(Cast|ptr|struct|Array|Raw)\b
+      scope: support.function.builtin.neon
 
   function_calls:
     - match: \b[a-zA-Z_]\w*(?=\()
       scope: entity.name.function.neon
+
   function_definitions:
     - match: \bfunc\b\s+(\w+)
       captures:
