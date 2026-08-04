@@ -8,10 +8,11 @@ class ParserError:
         self, message: str, token: Optional[Token] = None, line_text: str = ""
     ) -> NoReturn:
         if token:
-            pointer = "^" * (len(line_text))
             full_message = (
-                f"{token.file}:{token.line}: {line_text}\n{pointer}\n{message}"
+                f"{token.file}:{token.line}: "
             )
+            pointer = "-" * (len(full_message)+token.column) + "^"
+            full_message = f"{full_message}{line_text}\n{pointer}\n{message}"
         else:
             full_message = f"Syntax error at end of input:\n{message}"
 

@@ -3,8 +3,8 @@ func main() -> int
 {
 	for var x int = 0; x < 40; x+=1{
 		case x is {
-			24 -> {
-				printf("24 :D\n")
+			24, 35 -> {
+				printf("24 or 35 :D\n")
 			}
 			* {
 				printf("x = %i\n", x)

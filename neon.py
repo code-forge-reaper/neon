@@ -409,6 +409,8 @@ class Parser:
         # Parse procedure body.
         while self.current() and self.current().type == "ATTR":
             attributes.append(self.consume("ATTR").value)
+        if self.current() and self.current().value not in ["->", "{"]:
+            self.error(f"invalid token, expected '->' or '{{', but found: {self.current().value}", self.current())
         if self.current() and self.current().type == "arrow":
             self.consume("arrow")
             ret_type = self.parse_type()
@@ -549,6 +551,9 @@ class Parser:
         cases = []
 
         while self.current() and self.current().value not in ["}", "*"]:
+            if self.current().value == ",":
+                self.consume()
+                continue
             value = self.parse_expr()
             if self.current().type == "arrow":
                 self.consume("arrow")
