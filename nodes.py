@@ -3,21 +3,17 @@ from typing import List, NoReturn, Optional, Tuple, Union, Set
 from tokenizer import Token
 
 
-class ParserError:
+class ParserError(Exception):
     def __init__(
         self, message: str, token: Optional[Token] = None, line_text: str = ""
-    ) -> NoReturn:
+    ):
         if token:
-            full_message = (
-                f"{token.file}:{token.line}: "
-            )
-            pointer = "-" * (len(full_message)+token.column) + "^"
+            full_message = f"{token.file}:{token.line-1}:{token.column}: "
+            pointer = "-" * (len(full_message) + token.column) + "^"
             full_message = f"{full_message}{line_text}\n{pointer}\n{message}"
         else:
             full_message = f"Syntax error at end of input:\n{message}"
-
-        print(full_message)
-        exit(1)
+        super().__init__("\n" + full_message)
 
 
 # --- AST Node Definitions ---

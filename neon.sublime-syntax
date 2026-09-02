@@ -67,7 +67,7 @@ contexts:
 
   keywords:
     # Declarations & definitions
-    - match: \b(func|prototype|import|var|const|define|enum|abstract)\b
+    - match: \b(func|import|var|const|define|enum|abstract)\b
       scope: storage.modifier.neon
 
     # Control flow
@@ -115,7 +115,7 @@ contexts:
   builtins:
     # {name}<<type>>([something])
     # e.g: Cast<int>(a)
-    - match: \b(Cast|ptr|struct|Array|Raw)\b
+    - match: \b(Cast|ptr|volatile|struct|Array|Raw)\b
       scope: support.function.builtin.neon
 
   function_calls:
