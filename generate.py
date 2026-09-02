@@ -1,7 +1,6 @@
 from neon import *
 import sys
 import os
-import re
 
 decls = []
 
@@ -9,9 +8,6 @@ decls = []
 def appendOnce(a: list, what):
     if what not in a:
         a.append(what)
-
-
-typeStr = re.compile(r"([a-zA-Z][a-zA-Z_0-9]+)<(.*)>")
 
 
 def convert_type(typ: str) -> str:
@@ -25,24 +21,18 @@ def convert_type(typ: str) -> str:
         "ulong": "unsigned long",
         "string": "const char*",
         "boolean": "bool",
+        "pchar": "char*",
     }
-    m = typeStr.split(typ)
-    if len(m) > 1:  # volatile<ptr<uint16_t>> -> ['', 'volatile', 'ptr<uint16_t>', '']
-        _, type, rest, _ = m
-        if type == "ptr":
-            inner = convert_type(rest)
-            return f"{inner}*"
-        elif type == "volatile":
-            inner = convert_type(rest)
-            return f"volatile {inner}"
-        elif type == "struct":
-            inner = convert_type(rest)
-            return f"struct {inner}"
-
     if typ in type_map:
         return type_map[typ]
-
-    return typ
+    elif typ.startswith("ptr<") and typ.endswith(">"):
+        inner = convert_type(typ[4:-1])
+        return f"{inner}*"
+    elif typ.startswith("struct<") and typ.endswith(">"):
+        inner = convert_type(typ[7:-1])
+        return f"struct {inner}"
+    else:
+        return typ
 
 
 def get_array_info(type_str: str):
@@ -51,20 +41,19 @@ def get_array_info(type_str: str):
     Returns (base_type_c_string, size_string) if it's an array, else None.
     """
     if type_str.startswith("Array<") and type_str.endswith(">"):
-        arr, res = type_str.split("<", 1)
-        typeAndSize = res[:-1]
-        if "," in typeAndSize:
-            base, size = typeAndSize.split(",", 1)
+        content = type_str[6:-1]
+        if "," in content:
+            base, size = content.split(",", 1)
             base = base.strip()
             size = size.strip()
             return convert_type(base), (size if size != "0" else "")
-        return convert_type(typeAndSize), ""
     return None
 
 
 def generate_expr(expr: object | None) -> str:
     if expr is None:
         return ""
+
     if isinstance(expr, Num):
         return str(expr.value)
     elif isinstance(expr, Str):
@@ -105,7 +94,7 @@ def generate_expr(expr: object | None) -> str:
     elif isinstance(expr, PreprocessorDirective):
         return expr.directive
     elif isinstance(expr, Deref):
-        return f"*{generate_expr(expr.expr)}"
+        return f"*{expr.expr}"
     else:
         raise Exception(f"Unknown expression type: {expr}")
 

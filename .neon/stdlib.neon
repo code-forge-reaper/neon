@@ -3,39 +3,35 @@ no clue what gcc/clang hides in it
 nor if there's some kernel thing i need to read
 */
 type FILE
-#include <stddef.h>
-abstract size_t
 
-func printf(fmt string, ...) @declaration -> int
-func fopen(path string, mode string) @declaration -> ptr<FILE>
-func fclose(fd ptr<FILE>) @declaration -> int
-func rewind(fd ptr<FILE>) @declaration -> void
-func fseek(fd ptr<FILE>, offset ulong, position int) @declaration -> int
-func ftell(fd ptr<FILE>) @declaration -> uint
-func feof(fd ptr<FILE>) @declaration -> int
-func fprintf(fd ptr<FILE>, fmt string, ...) @declaration -> int
-func ferror(fd ptr<FILE>) @declaration -> int
-func snprintf(buf ptr<char>, size ulong, fmt string, ...) @declaration -> int
+prototype printf(fmt string, ...) -> int
+prototype fopen(path string, mode string) -> ptr<FILE>
+prototype fclose(fd ptr<FILE>) -> int
+prototype rewind(fd ptr<FILE>) -> void
+prototype fseek(fd ptr<FILE>, offset ulong, position int) -> int
+prototype ftell(fd ptr<FILE>) -> uint
+prototype feof(fd ptr<FILE>) -> int
+prototype fprintf(fd ptr<FILE>, fmt string, ...) -> int
+prototype ferror(fd ptr<FILE>) -> int
+prototype snprintf(buf ptr<char>, size ulong, fmt string, ...) -> int
 
 #define panicf(fmt, ...) do{printf("%s:%i: " fmt "\n", __FILE__, __LINE__, __VA_ARGS__);exit(1);}while(0)
 #define panic(fmt) do{printf("%s:%i: " fmt "\n", __FILE__, __LINE__);exit(1);}while(0)
 
-func perror(msg string) @declaration -> void
-func exit(code int) @declaration -> void
-func abs(i int) @declaration -> int
-func malloc(size ulong) @declaration -> ptr<void>
-func realloc(data ptr<void>, size size_t) @declaration ->ptr<void>
-func free(mem ptr<void>) @declaration -> void
-
+prototype perror(msg string) -> void
+prototype exit(code int) -> void
+prototype abs(i int) -> int
+prototype malloc(size ulong) -> ptr<void>
+prototype free(mem ptr<void>) -> void
 enum FileSeekPositions = {
     FILE_START      /* Seek from beginning of file.  */
     FILE_CURRENT    /* Seek from current position.   */
     FILE_END        /* Seek from end of file.        */
 }
 
-func fread(
+prototype fread(
     dataBuffer ptr<void>, size ulong,
-    nbytes ulong, fileStream ptr<FILE>) @declaration -> ulong
+    nbytes ulong, fileStream ptr<FILE>) -> ulong
 
 var nil ptr<void> = ptr<void>(0)
 // null is defined like this in __stddef_null.h 

@@ -19,14 +19,9 @@ class SplitArgs(argparse.Action):
         dest.extend(split_values)
         setattr(namespace, self.dest, dest)
 
-PROG_DESC = """neon2c - primary tool for handling Neon source code;
-If C can do it, so can Neon,
-since Neon is a language that gets turned into C,
-and has a slightly friendlier syntax.
-"""
 
 def main() -> None:
-    parser = argparse.ArgumentParser(prog="neon", description=PROG_DESC)
+    parser = argparse.ArgumentParser(prog="neon", description="Neon language toolchain")
     sub = parser.add_subparsers(dest="command", required=True)
 
     # ---------------- build ----------------
