@@ -1,0 +1,59 @@
+import "stdlib" // for "nil", aka: var nil ptr<void> = ptr<void>(0)
+
+// if C had actual arrays this wouldn't be needed
+// if i knew an actually good lib that had a dynamic array
+// i'd be using it, surprized raylib doesn't have one builtin
+type DynArray = 
+{
+	length size_t
+	capacity size_t
+	items ptr<ptr<void>>
+}
+// var sample Array<T>           -> T   sample[]
+// var sample2 Array<T, 24>      -> T   sample2[24]
+// var somePtr ptr<T>            -> T*  somePtr
+// var somePtr ptr<ptr<T>>       -> T** somePtr
+// var fromPtr int = Raw<intPtr> -> int fromPtr = *intPtr
+
+func DynNew(cap size_t)
+->DynArray{
+	return Cast<DynArray>({0, cap, malloc(cap * sizeof(nil))})
+}
+
+func DynResizeIfNeeded(arr ptr<DynArray>)
+{
+	if Cast<int>(arr:capacity) == 0{
+		arr:capacity = 256
+	}
+	if arr:length >= arr:capacity{
+		arr:capacity *= 2
+		arr:items = realloc(arr:items, arr:capacity*sizeof(Raw<arr:items>))
+	}
+}
+
+// the data must be a malloc-ed value
+func DynAppend(arr ptr<DynArray>, data ptr<void>)
+{
+	DynResizeIfNeeded(arr)
+	arr:items[arr:length] = data
+	arr:length+=1
+}
+
+func DynPop(arr ptr<DynArray>) -> ptr<void>{
+	if Cast<int>(arr:length) == 0{
+		panic("cannot pop from empty array")
+	}
+	arr:length-=1
+	var data ptr<void> = arr:items[arr:length]
+	arr:items[arr:length] = ptr<void>(0)
+	return data
+}
+
+func DynFree(arr ptr<DynArray>){
+	for var i size_t =0; i < arr:length; i +=1{
+		free(arr:items[i])
+	}
+	arr:length=0
+	arr:capacity=0
+	free(arr:items)
+}
