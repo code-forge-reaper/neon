@@ -226,7 +226,6 @@ def generate_signature(
     ret_type: str,
     args: list,
     attributes: list = None,
-    is_definition: bool = True,
 ) -> str:
     """
     Centralized function signature generation for both Definitions and Stubs.

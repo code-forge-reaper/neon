@@ -14,6 +14,8 @@ type DynArray =
 // var somePtr ptr<T>            -> T*  somePtr
 // var somePtr ptr<ptr<T>>       -> T** somePtr
 // var fromPtr int = Raw<intPtr> -> int fromPtr = *intPtr
+// vname:thing                   -> vname->thing
+// cvar:value:ival               -> cvar->value->ival
 
 func DynNew(cap size_t)
 ->DynArray{
