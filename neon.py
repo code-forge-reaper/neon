@@ -10,7 +10,7 @@ from nodes import *
 sections = {"code": [], "decls": []}
 
 filesIncluded = {}
-PROCEDURE = "func"
+PROCEDURE = "fn"
 IMPORT_FILE = "import"
 DECLARE_VARIABLE = "var"
 DECLARE_CONSTANT = "const"
@@ -359,30 +359,31 @@ class Parser:
             if self.current_token() and self.current_token().value == ",":
                 self.consume_operator(",")
         self.consume_operator(")")
-
-        while self.current_token() and self.current_token().type == "ATTR":
-            attributes.append(self.consume("ATTR").value)
-        VALID = ["->", "{"]
-        if self.current_token() and self.current_token().value not in VALID:
-            msg = f"Invalid token, expected {" or ".join(VALID)},"
-            msg += f"but found: {self.current_token().value}"
+        brack = self.current_token() and self.current_token().value == "{"
+        id = self.current_token() and self.current_token().type == "ID"
+        if (not brack) and (not id):
+            msg = f"Invalid token, expected type 'ID' or literal '{{',"
+            msg += f"but found: {self.current_token()}"
             self.error(
                 msg,
                 self.current_token(),
             )
 
-        if self.current_token() and self.current_token().type == "arrow":
-            self.consume("arrow")
+        if self.current_token() and self.current_token().type == "ID":
             ret_type = self.parse_type()
         else:
             ret_type = "void"
+
+        while self.current_token() and self.current_token().type == "ATTR":
+            attributes.append(self.consume("ATTR").value)
+
         stub_node = StubDef(
             name=name,
             ret_type=ret_type,
             attributes=attributes,
             args=args,
         )
-        if "@declaration" in attributes:  # only declare it
+        if "@def" in attributes:  # only declare it
             # print(stub_node)
             return [stub_node]
 
@@ -883,54 +884,45 @@ class Parser:
     def parse_object_literal(self) -> StructLiteral:
         self.consume_operator("{")
         fields = []
-        if (
-            self.current_token()
-            and self.current_token().type == "OP"
-            and self.current_token().value == "}"
-        ):
-            self.consume_operator("}")
-            return StructLiteral(fields)
-        if (
-            self.current_token().type == "ID"
-            and self.lookahead_token()
-            and self.lookahead_token().type == "OP"
-            and self.lookahead_token().value == ":"
-        ):
-            # Named fields
-            while True:
+
+        def at_op(value: str) -> bool:
+            tok = self.current_token()
+            return tok is not None and tok.type == "OP" and tok.value == value
+
+        while not at_op("}"):
+            if self.current_token() is None:
+                self.error("Expected object field or '}'", self.current_token())
+
+            tok = self.current_token()
+            nxt = self.lookahead_token()
+
+            # Named field: ID ':'
+            if (
+                tok is not None
+                and tok.type == "ID"
+                and nxt is not None
+                and nxt.type == "OP"
+                and nxt.value == ":"
+            ):
                 key = self.consume("ID").value
                 self.consume_operator(":")
                 value = self.parse_expr()
                 fields.append((key, value))
-                if (
-                    self.current_token()
-                    and self.current_token().type == "OP"
-                    and self.current_token().value == ","
-                ):
-                    self.consume_operator(",")
-                    continue
-                else:
-                    break
-        else:
-            # Positional fields
-            while True:
-                expr = self.parse_expr()
-                fields.append((None, expr))
-                if (
-                    self.current_token()
-                    and self.current_token().type == "OP"
-                    and self.current_token().value == ","
-                ):
-                    self.consume_operator(",")
-                    continue
-                else:
-                    break
-        if not (
-            self.current_token()
-            and self.current_token().type == "OP"
-            and self.current_token().value == "}"
-        ):
-            self.error("Expected '}' to close struct literal", self.current_token())
+            else:
+                # Positional field
+                value = self.parse_expr()
+                fields.append((None, value))
+
+            # Field separator
+            if at_op(","):
+                self.consume_operator(",")
+                continue
+
+            if at_op("}"):
+                break
+
+            self.error("Expected ',' or '}' after object field", self.current_token())
+
         self.consume_operator("}")
         return StructLiteral(fields)
 

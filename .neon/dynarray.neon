@@ -17,12 +17,11 @@ type DynArray =
 // vname:thing                   -> vname->thing
 // cvar:value:ival               -> cvar->value->ival
 
-func DynNew(cap size_t)
-->DynArray{
+fn DynNew(cap size_t) DynArray{
 	return Cast<DynArray>({0, cap, malloc(cap * sizeof(nil))})
 }
 
-func DynResizeIfNeeded(arr ptr<DynArray>)
+fn DynResizeIfNeeded(arr ptr<DynArray>)
 {
 	if Cast<int>(arr:capacity) == 0{
 		arr:capacity = 256
@@ -34,14 +33,14 @@ func DynResizeIfNeeded(arr ptr<DynArray>)
 }
 
 // the data must be a malloc-ed value
-func DynAppend(arr ptr<DynArray>, data ptr<void>)
+fn DynAppend(arr ptr<DynArray>, data ptr<void>)
 {
 	DynResizeIfNeeded(arr)
 	arr:items[arr:length] = data
 	arr:length+=1
 }
 
-func DynPop(arr ptr<DynArray>) -> ptr<void>{
+fn DynPop(arr ptr<DynArray>) ptr<void>{
 	if Cast<int>(arr:length) == 0{
 		panic("cannot pop from empty array")
 	}
@@ -51,7 +50,7 @@ func DynPop(arr ptr<DynArray>) -> ptr<void>{
 	return data
 }
 
-func DynFree(arr ptr<DynArray>){
+fn DynFree(arr ptr<DynArray>){
 	for var i size_t =0; i < arr:length; i +=1{
 		free(arr:items[i])
 	}

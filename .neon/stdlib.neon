@@ -6,26 +6,26 @@ type FILE
 #include <stddef.h>
 abstract size_t
 
-func printf(fmt string, ...) @declaration -> int
-func fopen(path string, mode string) @declaration -> ptr<FILE>
-func fclose(fd ptr<FILE>) @declaration -> int
-func rewind(fd ptr<FILE>) @declaration -> void
-func fseek(fd ptr<FILE>, offset ulong, position int) @declaration -> int
-func ftell(fd ptr<FILE>) @declaration -> uint
-func feof(fd ptr<FILE>) @declaration -> int
-func fprintf(fd ptr<FILE>, fmt string, ...) @declaration -> int
-func ferror(fd ptr<FILE>) @declaration -> int
-func snprintf(buf ptr<char>, size ulong, fmt string, ...) @declaration -> int
+fn printf(fmt string, ...) int @def
+fn fopen(path string, mode string) ptr<FILE> @def
+fn fclose(fd ptr<FILE>) int @def
+fn rewind(fd ptr<FILE>) void @def
+fn fseek(fd ptr<FILE>, offset ulong, position int) int @def
+fn ftell(fd ptr<FILE>) uint @def
+fn feof(fd ptr<FILE>) int @def
+fn fprintf(fd ptr<FILE>, fmt string, ...) int @def
+fn ferror(fd ptr<FILE>) int @def
+fn snprintf(buf ptr<char>, size ulong, fmt string, ...) int @def
 
 #define panicf(fmt, ...) do{printf("%s:%i: " fmt "\n", __FILE__, __LINE__, __VA_ARGS__);exit(1);}while(0)
 #define panic(fmt) do{printf("%s:%i: " fmt "\n", __FILE__, __LINE__);exit(1);}while(0)
 
-func perror(msg string) @declaration -> void
-func exit(code int) @declaration -> void
-func abs(i int) @declaration -> int
-func malloc(size ulong) @declaration -> ptr<void>
-func realloc(data ptr<void>, size size_t) @declaration ->ptr<void>
-func free(mem ptr<void>) @declaration -> void
+fn perror(msg string) void @def
+fn exit(code int) void @def
+fn abs(i int) int @def
+fn malloc(size ulong) ptr<void> @def
+fn realloc(data ptr<void>, size size_t) ptr<void> @def
+fn free(mem ptr<void>) void @def
 
 enum FileSeekPositions = {
     FILE_START      /* Seek from beginning of file.  */
@@ -33,15 +33,15 @@ enum FileSeekPositions = {
     FILE_END        /* Seek from end of file.        */
 }
 
-func fread(
+fn fread(
     dataBuffer ptr<void>, size ulong,
-    nbytes ulong, fileStream ptr<FILE>) @declaration -> ulong
+    nbytes ulong, fileStream ptr<FILE>) ulong @def
 
 var nil ptr<void> = ptr<void>(0)
 // null is defined like this in __stddef_null.h 
 // #define NULL ((void*)0)
 
-func clamp(target float, min float, max float) -> float
+fn clamp(target float, min float, max float) float
 {
 	if target >= max {
 		return max
@@ -54,7 +54,7 @@ func clamp(target float, min float, max float) -> float
 	}
 }
 
-func assert(cond boolean, msg string) -> void
+fn assert(cond boolean, msg string) void
 {
 	if ! cond {
 		printf("Assertion failed: %s\n", msg)
@@ -62,19 +62,19 @@ func assert(cond boolean, msg string) -> void
 	}
 }
 
-func Max(a int, b int) -> int
+fn Max(a int, b int) int
 {
 	if a > b {return a}
 	return b
 }
 
-func Min(a int, b int) -> int
+fn Min(a int, b int) int
 {
 	if a < b {return a}
 	return b
 }
 
-func Sign(x float) -> float
+fn Sign(x float) float
 {
 	if x < 0 {return -1}
 	return 1

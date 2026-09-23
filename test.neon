@@ -1,6 +1,6 @@
 import "stdlib"
 import "dynarray"
-func main() -> int
+fn main() int
 {
 	for var x int = 0; x < 40; x+=1{
 		case x is {

@@ -29,7 +29,7 @@ type Image = {
 }
 
 type Color = {
-	// uchar -> unsigned char, since that is what raylib defines these as(0-255)
+	// uchar ->  unsigned char, since that is what raylib defines these as(0-255)
 	r uchar;
 	g uchar;
 	b uchar;
@@ -42,76 +42,76 @@ type Camera3D = {
 	fovy float
 	projection int
 }
-func InitWindow(width int, height int, title string) @declaration ->void
-func LoadImage(path string) @declaration ->Image
-func LoadTextureFromImage(image Image) @declaration ->Texture2D
-func UnloadTexture(texture Texture2D) @declaration ->void
-func UnloadImage(image Image) @declaration ->void
-func DrawTexture(texture Texture2D, posX int, posY int, tint Color) @declaration ->void
-func GetScreenWidth() @declaration ->int
-func GetScreenHeight() @declaration ->int
+fn InitWindow(width int, height int, title string) void @def
+fn LoadImage(path string) Image @def
+fn LoadTextureFromImage(image Image) Texture2D @def
+fn UnloadTexture(texture Texture2D) void @def
+fn UnloadImage(image Image) void @def
+fn DrawTexture(texture Texture2D, posX int, posY int, tint Color) void @def
+fn GetScreenWidth() int @def
+fn GetScreenHeight() int @def
 
-func GetFrameTime() @declaration ->float
-func IsKeyDown(key int) @declaration ->boolean
-func IsKeyPressed(key int) @declaration ->boolean
-func IsKeyReleased(key int) @declaration ->boolean
-func IsKeyUp(key int) @declaration ->boolean
-func SetExitKey(key int) @declaration ->void
+fn GetFrameTime() float @def
+fn IsKeyDown(key int) boolean @def
+fn IsKeyPressed(key int) boolean @def
+fn IsKeyReleased(key int) boolean @def
+fn IsKeyUp(key int) boolean @def
+fn SetExitKey(key int) void @def
 
-func WindowShouldClose() @declaration ->boolean
-func ClearBackground(color Color) @declaration ->void
-func BeginDrawing() @declaration ->void
-func DrawRectangleRec(rect Rectangle, color Color) @declaration ->void
-func DrawRectangle(x int, y int, width int, height int, color Color) @declaration ->void
-func DrawRectangleLines(x int, y int, width int, height int, color Color) @declaration ->void
-func DrawRectangleV(position Vector2, size Vector2, color Color) @declaration ->void
-func DrawCircle(centerX int, centerY int, rad float, color Color) @declaration ->void
-func DrawCircleLines(centerX int, centerY int, rad float, color Color) @declaration ->void
-func DrawCircleV(center Vector2, rad float, color Color) @declaration ->void
-func DrawLine(startX int, startY int, endX int, endY int, color Color) @declaration ->void
-func DrawLineV(p1 Vector2, p2 Vector2, color Color) @declaration ->void
-func DrawPixel(x int, y int, color Color) @declaration ->void
+fn WindowShouldClose() boolean @def
+fn ClearBackground(color Color) void @def
+fn BeginDrawing() void @def
+fn DrawRectangleRec(rect Rectangle, color Color) void @def
+fn DrawRectangle(x int, y int, width int, height int, color Color) void @def
+fn DrawRectangleLines(x int, y int, width int, height int, color Color) void @def
+fn DrawRectangleV(position Vector2, size Vector2, color Color) void @def
+fn DrawCircle(centerX int, centerY int, rad float, color Color) void @def
+fn DrawCircleLines(centerX int, centerY int, rad float, color Color) void @def
+fn DrawCircleV(center Vector2, rad float, color Color) void @def
+fn DrawLine(startX int, startY int, endX int, endY int, color Color) void @def
+fn DrawLineV(p1 Vector2, p2 Vector2, color Color) void @def
+fn DrawPixel(x int, y int, color Color) void @def
 
-func DrawLineEx(start Vector2, endPos Vector2, thickness float, color Color) @declaration ->void
-func GetRandomValue(min int, max int) @declaration ->int
+fn DrawLineEx(start Vector2, endPos Vector2, thickness float, color Color) void @def
+fn GetRandomValue(min int, max int) int @def
 
-func BeginMode3D(camera Camera3D) @declaration ->void
-func DrawGrid(slices int, spacing float) @declaration ->void
-func DrawLine3D(start Vector3, endPos Vector3, color Color) @declaration ->void
-func DrawSphere(center Vector3, radius float, color Color) @declaration ->void
-func DrawSphereEx(center Vector3, radius float, rings int, slices int, color Color) @declaration ->void
-func DrawCylinder(position Vector3, radiusTop float, radiusBottom float, height float, slices int, color Color) @declaration ->void
-func DrawCylinderWires(position Vector3, radiusTop float, radiusBottom float, height float, slices int, color Color) @declaration ->void
-func DrawCube(position Vector3, width float, height float, length float, color Color) @declaration ->void
-func DrawCubeWires(position Vector3, width float, height float, length float, color Color) @declaration ->void
-func EndMode3D() @declaration ->void
-func DrawTextureRec(texture Texture2D, source Rectangle, position Vector2, tint Color) @declaration ->void
-func SetTargetFPS(fps int) @declaration ->void
-func EndDrawing() @declaration ->void
-func CloseWindow() @declaration ->void
+fn BeginMode3D(camera Camera3D) void @def
+fn DrawGrid(slices int, spacing float) void @def
+fn DrawLine3D(start Vector3, endPos Vector3, color Color) void @def
+fn DrawSphere(center Vector3, radius float, color Color) void @def
+fn DrawSphereEx(center Vector3, radius float, rings int, slices int, color Color) void @def
+fn DrawCylinder(position Vector3, radiusTop float, radiusBottom float, height float, slices int, color Color) void @def
+fn DrawCylinderWires(position Vector3, radiusTop float, radiusBottom float, height float, slices int, color Color) void @def
+fn DrawCube(position Vector3, width float, height float, length float, color Color) void @def
+fn DrawCubeWires(position Vector3, width float, height float, length float, color Color) void @def
+fn EndMode3D() void @def
+fn DrawTextureRec(texture Texture2D, source Rectangle, position Vector2, tint Color) void @def
+fn SetTargetFPS(fps int) void @def
+fn EndDrawing() void @def
+fn CloseWindow() void @def
 //RLAPI int MeasureText(const char *text, int fontSize);                                      // Measure string width for default font
-func MeasureText(text string, fontSize int) @declaration ->int
+fn MeasureText(text string, fontSize int) int @def
 //RLAPI void DrawText(const char *text, int posX, int posY, int fontSize, Color color);       // Draw text (using default font)
-func DrawText(text string, posX int, posY int, fontSize int, color Color) @declaration ->void
+fn DrawText(text string, posX int, posY int, fontSize int, color Color) void @def
 
-func IsMouseButtonPressed(button int) @declaration ->boolean
-func IsMouseButtonDown(button int) @declaration ->boolean
-func IsMouseButtonReleased(button int) @declaration ->boolean
-func IsMouseButtonUp(button int) @declaration ->boolean
+fn IsMouseButtonPressed(button int) boolean @def
+fn IsMouseButtonDown(button int) boolean @def
+fn IsMouseButtonReleased(button int) boolean @def
+fn IsMouseButtonUp(button int) boolean @def
 
-func GetMouseX() @declaration ->int
-func GetMouseY() @declaration ->int
-func GetMousePosition() @declaration ->Vector2
-func GetMouseDelta() @declaration ->Vector2
+fn GetMouseX() int @def
+fn GetMouseY() int @def
+fn GetMousePosition() Vector2 @def
+fn GetMouseDelta() Vector2 @def
 
-func SetMousePosition(x int, y int) @declaration ->void
-func SetMouseOffset(offsetX int, offsetY int) @declaration ->void
-func SetMouseScale(scaleX float, scaleY float) @declaration ->void
-func GetMouseWheelMove() @declaration ->float
-func GetMouseWheelMoveV() @declaration ->Vector2
-func SetMouseCursor(cursor int) @declaration ->void
-func GetColor(v int) @declaration ->Color
-func TextFormat(text string, ...) @declaration ->string
+fn SetMousePosition(x int, y int) void @def
+fn SetMouseOffset(offsetX int, offsetY int) void @def
+fn SetMouseScale(scaleX float, scaleY float) void @def
+fn GetMouseWheelMove() float @def
+fn GetMouseWheelMoveV() Vector2 @def
+fn SetMouseCursor(cursor int) void @def
+fn GetColor(v int) Color @def
+fn TextFormat(text string, ...) string @def
 
 
 // Mouse buttons
@@ -158,7 +158,7 @@ const KEY_ENTER int = 257
 
 ////// ---------------- //////
 //     math functions      //
-func Vector2Add(vec1 Vector2, vec2 Vector2) @declaration ->Vector2
-func Vector2Scale(vec Vector2, scale float) @declaration ->Vector2
-func Vector2Clamp(vec1 Vector2, min Vector2, max Vector2) @declaration ->Vector2
-func DrawFPS(x int, y int) @declaration ->void
+fn Vector2Add(vec1 Vector2, vec2 Vector2) Vector2 @def
+fn Vector2Scale(vec Vector2, scale float) Vector2 @def
+fn Vector2Clamp(vec1 Vector2, min Vector2, max Vector2) Vector2 @def
+fn DrawFPS(x int, y int) void @def

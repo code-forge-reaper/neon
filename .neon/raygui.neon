@@ -13,7 +13,7 @@ in raygui.h:
 RAYGUIAPI int GuiLabel(Rectangle bounds, const char *text);                                            // Label control
 
 in raygui.neon(this file):
-func GuiLabel(text string pos Vector2) -> void
+fn GuiLabel(text string pos Vector2)
 */
 import "raylib"
 type GuiBorder = {
@@ -110,12 +110,12 @@ var theme Theme = {
 }
 
 // SetGuiTheme(&theme)
-func SetGuiTheme(newTheme ptr<Theme>) -> void {
+fn SetGuiTheme(newTheme ptr<Theme>) {
 	theme = Raw<newTheme>
 }
 
 
-func DrawBorder(x int, y int, w int, h int, color Color, thickness int) -> void{
+fn DrawBorder(x int, y int, w int, h int, color Color, thickness int) {
 	if thickness <= 0 {
 		return
 	}
@@ -125,7 +125,7 @@ func DrawBorder(x int, y int, w int, h int, color Color, thickness int) -> void{
 	DrawRectangle(x + w - thickness, y, thickness, h, color) // right
 }
 
-func GuiButton(text string, pos Vector2) -> boolean
+fn GuiButton(text string, pos Vector2) boolean
 {
 
     var bg Color = theme.button.background
@@ -166,7 +166,7 @@ func GuiButton(text string, pos Vector2) -> boolean
 }
 
 
-func GuiLabel(text string, pos Vector2) -> void
+fn GuiLabel(text string, pos Vector2)
 {
 	var bg Color = theme.label.background
 	var textColor Color = theme.label.textColor
@@ -185,7 +185,7 @@ func GuiLabel(text string, pos Vector2) -> void
 	DrawBorder(pos.x, pos.y, width, height, border.color, border.width)
 }
 
-func GuiImageButton(texture Texture2D, source Rectangle, pos Vector2) -> boolean
+fn GuiImageButton(texture Texture2D, source Rectangle, pos Vector2) boolean
 {
     var bg Color = theme.button.background
     var hoverColor Color = theme.button.hoverColor
@@ -208,7 +208,7 @@ func GuiImageButton(texture Texture2D, source Rectangle, pos Vector2) -> boolean
 	return false
 }
 
-func GuiCheckbox(text string, checked ptr<boolean>, position Vector2, fontSize int)-> boolean
+fn GuiCheckbox(text string, checked ptr<boolean>, position Vector2, fontSize int) boolean
 {
 	var bg Color = theme.button.background
 	var hoverColor Color = theme.checkbox.hoverColor
@@ -275,7 +275,7 @@ func GuiCheckbox(text string, checked ptr<boolean>, position Vector2, fontSize i
 	return original != Raw<checked>
 }
 
-func GuiTextInput(text string, position Vector2) -> void{
+fn GuiTextInput(text string, position Vector2) {
 	var bg Color = theme.textInput.background
 	var textColor Color = theme.textInput.textColor
 	var border GuiBorder = theme.textInput.border

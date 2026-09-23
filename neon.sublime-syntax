@@ -67,7 +67,7 @@ contexts:
 
   keywords:
     # Declarations & definitions
-    - match: \b(func|import|var|const|define|enum|abstract)\b
+    - match: \b(fn|import|var|const|define|enum|abstract)\b
       scope: storage.modifier.neon
 
     # Control flow
@@ -123,7 +123,7 @@ contexts:
       scope: entity.name.function.neon
 
   function_definitions:
-    - match: \bfunc\b\s+(\w+)
+    - match: \bfn\b\s+(\w+)
       captures:
         1: entity.name.function.definition.neon
       scope: storage.modifier.neon
